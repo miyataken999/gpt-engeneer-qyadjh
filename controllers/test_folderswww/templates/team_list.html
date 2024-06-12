@@ -1,0 +1,7 @@
+<h1>Team List</h1>
+<ul>
+    {% for team in teams %}
+    <li>{{ team.name }} ({{ team.created_at }})</li>
+    {% endfor %}
+</ul>
+<a href="{{ url_for("create_team") }}">Create Team</a>

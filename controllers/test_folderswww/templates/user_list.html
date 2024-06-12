@@ -1,0 +1,6 @@
+<h1>User List</h1>
+<ul>
+    {% for user in users %}
+    <li><a href="{{ url_for("user_detail", user_id=user.id) }}">{{ user.username }} ({{ user.profile[:10] }}...)</a></li>
+    {% endfor %}
+</ul>

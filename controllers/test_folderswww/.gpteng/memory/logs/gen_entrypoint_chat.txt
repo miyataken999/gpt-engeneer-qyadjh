@@ -1,0 +1,887 @@
+
+2024-06-12T19:28:01.876492
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api/
+2 app/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 team.py
+9 schemas/
+10 __init__.py
+11 user.py
+12 team.py
+13 routers/
+14 __init__.py
+15 user.py
+16 team.py
+17 db.py
+18 requirements.txt
+19 .gitignore
+
+File: api/app/__init__.py
+1 # empty file
+
+File: api/app/main.py
+1 from fastapi import FastAPI
+2 from fastapi.responses import JSONResponse
+3 from fastapi.requests import Request
+4 from fastapi.encoders import jsonable_encoder
+5 from pydantic import BaseModel
+6 from sqlalchemy import create_engine
+7 from sqlalchemy.orm import sessionmaker
+8 from api.app.models import Base
+9 from api.app.routers import user_router, team_router
+10 
+11 app = FastAPI()
+12 
+13 engine = create_engine('sqlite:///api.db')
+14 Base.metadata.create_all(engine)
+15 
+16 Session = sessionmaker(bind=engine)
+17 session = Session()
+18 
+19 @app.on_event("startup")
+20 async def startup():
+21     print("Starting up...")
+22 
+23 @app.on_event("shutdown")
+24 async def shutdown():
+25     print("Shutting down...")
+26 
+27 app.include_router(user_router)
+28 app.include_router(team_router)
+
+File: api/app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class User(Base):
+7     __tablename__ = 'users'
+8     id = Column(Integer, primary_key=True)
+9     username = Column(String, unique=True)
+10     password = Column(String)
+11     profile = Column(String)
+12     team_id = Column(Integer)
+
+File: api/app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class Team(Base):
+7     __tablename__ = 'teams'
+8     id = Column(Integer, primary_key=True)
+9     name = Column(String, unique=True)
+
+File: api/app/schemas/user.py
+1 from pydantic import BaseModel
+2 
+3 class UserSchema(BaseModel):
+4     username: str
+5     password: str
+6     profile: str
+7     team_id: int
+
+File: api/app/schemas/team.py
+1 from pydantic import BaseModel
+2 
+3 class TeamSchema(BaseModel):
+4     name: str
+
+File: api/app/routers/user.py
+1 from fastapi import APIRouter, HTTPException
+2 from api.app.models import User
+3 from api.app.schemas import UserSchema
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/register")
+8 async def register_user(user: UserSchema):
+9     # check if username already exists
+10     existing_user = session.query(User).filter_by(username=user.username).first()
+11     if existing_user:
+12         raise HTTPException(status_code=400, detail="Username already exists")
+13     new_user = User(username=user.username, password=user.password, profile=user.profile, team_id=user.team_id)
+14     session.add(new_user)
+15     session.commit()
+16     return {"message": "User created successfully"}
+17 
+18 @router.post("/login")
+19 async def login_user(username: str, password: str):
+20     user = session.query(User).filter_by(username=username, password=password).first()
+21     if user:
+22         return {"message": "Logged in successfully"}
+23     else:
+24         raise HTTPException(status_code=401, detail="Invalid username or password")
+
+File: api/app/routers/team.py
+1 from fastapi import APIRouter
+2 from api.app.models import Team
+3 from api.app.schemas import TeamSchema
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/teams")
+8 async def create_team(team: TeamSchema):
+9     new_team = Team(name=team.name)
+10     session.add(new_team)
+11     session.commit()
+12     return {"message": "Team created successfully"}
+
+File: api/db.py
+1 from sqlalchemy import create_engine
+2 from sqlalchemy.orm import sessionmaker
+3 
+4 engine = create_engine('sqlite:///api.db')
+5 Session = sessionmaker(bind=engine)
+6 session = Session()
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: .gitignore
+1 api.db
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+uvicorn api.app.main:app --host 0.0.0.0 --port 8000
+```
+
+2024-06-12T19:30:21.822691
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 Flask==2.0.1
+2 Flask-SQLAlchemy==2.5.1
+3 Flask-Login==0.5.0
+4 Flask-WTF==0.15.1
+5 SQLAlchemy==1.4.25
+6 pytest==6.2.4
+
+File: app/__init__.py
+1 from flask import Flask
+2 from flask_sqlalchemy import SQLAlchemy
+3 from flask_login import LoginManager
+4 from flask_wtf import FlaskForm
+5 
+6 app = Flask(__name__)
+7 app.config["SECRET_KEY"] = "secret_key_here"
+8 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+9 
+10 db = SQLAlchemy(app)
+11 login_manager = LoginManager(app)
+12 
+13 from app.models import *
+14 from app.routes import *
+
+File: app/models.py
+1 from app import db
+2 
+3 class User(db.Model):
+4     id = db.Column(db.Integer, primary_key=True)
+5     username = db.Column(db.String(64), unique=True, nullable=False)
+6     password = db.Column(db.String(128), nullable=False)
+7     profile = db.Column(db.String(255), nullable=True)
+8     team_id = db.Column(db.Integer, db.ForeignKey("team.id"))
+9     team = db.relationship("Team", backref="users")
+10 
+11 class Team(db.Model):
+12     id = db.Column(db.Integer, primary_key=True)
+13     name = db.Column(db.String(64), unique=True, nullable=False)
+14     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+15 
+16 class Tag(db.Model):
+17     id = db.Column(db.Integer, primary_key=True)
+18     name = db.Column(db.String(64), nullable=False)
+19     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+20     user = db.relationship("User", backref="tags")
+
+File: app/forms.py
+1 from flask_wtf import FlaskForm
+2 from wtforms import StringField, PasswordField, TextAreaField
+3 from wtforms.validators import DataRequired, Length, EqualTo
+4 
+5 class RegistrationForm(FlaskForm):
+6     username = StringField("Username", validators=[DataRequired(), Length(min=4, max=64)])
+7     password = PasswordField("Password", validators=[DataRequired(), Length(min=8)])
+8     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password")])
+9 
+10 class LoginForm(FlaskForm):
+11     username = StringField("Username", validators=[DataRequired(), Length(min=4, max=64)])
+12     password = PasswordField("Password", validators=[DataRequired(), Length(min=8)])
+13 
+14 class ProfileForm(FlaskForm):
+15     profile = TextAreaField("Profile", validators=[DataRequired()])
+16     team_id = StringField("Team", validators=[DataRequired()])
+17     tags = StringField("Tags", validators=[DataRequired()])
+
+File: app/routes.py
+1 from flask import render_template, redirect, url_for, flash
+2 from flask_login import login_user, logout_user, login_required
+3 from app import app, db, login_manager
+4 from app.forms import RegistrationForm, LoginForm, ProfileForm
+5 from app.models import User, Team, Tag
+6 
+7 @app.route("/")
+8 def index():
+9     return redirect(url_for("user_list"))
+10 
+11 @app.route("/register", methods=["GET", "POST"])
+12 def register():
+13     form = RegistrationForm()
+14     if form.validate_on_submit():
+15         user = User(username=form.username.data, password=form.password.data)
+16         db.session.add(user)
+17         db.session.commit()
+18         login_user(user)
+19         return redirect(url_for("user_list"))
+20     return render_template("register.html", form=form)
+21 
+22 @app.route("/login", methods=["GET", "POST"])
+23 def login():
+24     form = LoginForm()
+25     if form.validate_on_submit():
+26         user = User.query.filter_by(username=form.username.data).first()
+27         if user and user.password == form.password.data:
+28             login_user(user)
+29             return redirect(url_for("user_list"))
+30     return render_template("login.html", form=form)
+31 
+32 @app.route("/logout")
+33 @login_required
+34 def logout():
+35     logout_user()
+36     return redirect(url_for("index"))
+37 
+38 @app.route("/teams")
+39 def team_list():
+40     teams = Team.query.order_by(Team.created_at.desc()).all()
+41     return render_template("team_list.html", teams=teams)
+42 
+43 @app.route("/teams/create", methods=["GET", "POST"])
+44 def create_team():
+45     if request.method == "POST":
+46         team = Team(name=request.form["name"])
+47         db.session.add(team)
+48         db.session.commit()
+49         return redirect(url_for("team_list"))
+50     return render_template("create_team.html")
+51 
+52 @app.route("/users")
+53 def user_list():
+54     users = User.query.order_by(User.created_at.desc()).all()
+55     return render_template("user_list.html", users=users)
+56 
+57 @app.route("/users/<int:user_id>")
+58 def user_detail(user_id):
+59     user = User.query.get_or_404(user_id)
+60     return render_template("user_detail.html", user=user)
+61 
+62 @app.route("/profile", methods=["GET", "POST"])
+63 @login_required
+64 def profile():
+65     form = ProfileForm()
+66     if form.validate_on_submit():
+67         current_user.profile = form.profile.data
+68         current_user.team_id = form.team_id.data
+69         db.session.commit()
+70         return redirect(url_for("user_list"))
+71     return render_template("profile.html", form=form)
+72 
+73 @login_manager.user_loader
+74 def load_user(user_id):
+75     return User.query.get(int(user_id))
+76 
+77 if __name__ == "__main__":
+78     app.run(debug=True)
+
+File: templates/register.html
+1 <h1>Register</h1>
+2 <form action="" method="post">
+3     {{ form.hidden_tag() }}
+4     <label for="username">Username:</label>
+5     <input type="text" id="username" name="username" required>
+6     <br>
+7     <label for="password">Password:</label>
+8     <input type="password" id="password" name="password" required>
+9     <br>
+10     <label for="confirm_password">Confirm Password:</label>
+11     <input type="password" id="confirm_password" name="confirm_password" required>
+12     <br>
+13     <input type="submit" value="Register">
+14 </form>
+
+File: templates/login.html
+1 <h1>Login</h1>
+2 <form action="" method="post">
+3     {{ form.hidden_tag() }}
+4     <label for="username">Username:</label>
+5     <input type="text" id="username" name="username" required>
+6     <br>
+7     <label for="password">Password:</label>
+8     <input type="password" id="password" name="password" required>
+9     <br>
+10     <input type="submit" value="Login">
+11 </form>
+
+File: templates/team_list.html
+1 <h1>Team List</h1>
+2 <ul>
+3     {% for team in teams %}
+4     <li>{{ team.name }} ({{ team.created_at }})</li>
+5     {% endfor %}
+6 </ul>
+7 <a href="{{ url_for("create_team") }}">Create Team</a>
+
+File: templates/create_team.html
+1 <h1>Create Team</h1>
+2 <form action="" method="post">
+3     <label for="name">Team Name:</label>
+4     <input type="text" id="name" name="name" required>
+5     <br>
+6     <input type="submit" value="Create">
+7 </form>
+
+File: templates/user_list.html
+1 <h1>User List</h1>
+2 <ul>
+3     {% for user in users %}
+4     <li><a href="{{ url_for("user_detail", user_id=user.id) }}">{{ user.username }} ({{ user.profile[:10] }}...)</a></li>
+5     {% endfor %}
+6 </ul>
+
+File: templates/user_detail.html
+1 <h1>User Detail</h1>
+2 <p>Username: {{ user.username }}</p>
+3 <p>Profile: {{ user.profile }}</p>
+4 <p>Team: {{ user.team.name }}</p>
+5 <p>Tags: {% for tag in user.tags %}{{ tag.name }}{% endfor %}</p>
+
+File: templates/profile.html
+1 <h1>Profile</h1>
+2 <form action="" method="post">
+3     {{ form.hidden_tag() }}
+4     <label for="profile">Profile:</label>
+5     <textarea id="profile" name="profile" required>{{ current_user.profile }}</textarea>
+6     <br>
+7     <label for="team_id">Team:</label>
+8     <select id="team_id" name="team_id" required>
+9         {% for team in teams %}
+10         <option value="{{ team.id }}">{{ team.name }}</option>
+11         {% endfor %}
+12     </select>
+13     <br>
+14     <label for="tags">Tags:</label>
+15     <input type="text" id="tags" name="tags" required>
+16     <br>
+17     <input type="submit" value="Save">
+18 </form>
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python app/__init__.py
+```
+
+Note: This script assumes that you are running it from the root directory of the codebase.
+
+2024-06-12T19:31:51.127044
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 app
+2 Models
+3 User.php
+4 Team.php
+5 Profile.php
+6 Tag.php
+7 ...
+8 Controllers
+9 UserController.php
+10 TeamController.php
+11 ProfileController.php
+12 ...
+13 Requests
+14 UserRequest.php
+15 TeamRequest.php
+16 ProfileRequest.php
+17 ...
+18 routes
+19 web.php
+20 ...
+21 database
+22 migrations
+23 create_users_table.php
+24 create_teams_table.php
+25 create_profiles_table.php
+26 create_tags_table.php
+27 ...
+28 seeds
+29 DatabaseSeeder.php
+30 ...
+31 composer.json
+
+File: composer.json
+1 {
+2     "name": "laravel/laravel",
+3     "description": "The Laravel Framework.",
+4     "keywords": ["framework", "laravel"],
+5     "license": "MIT",
+6     "type": "project",
+7     "require": {
+8         "php": "^7.2.5",
+9         "fideloper/proxy": "^4.2",
+10         "fruitcake/laravel-cors": "^2.0",
+11         "guzzlehttp/guzzle": "^7.0.1",
+12         "laravel/framework": "^8.40",
+13         "laravel/tinker": "^2.5"
+14     },
+15     "require-dev": {
+16         "facade/ignition": "^2.5",
+17         "fakerphp/faker": "^1.9.1",
+18         "laravel/sail": "^1.0.1",
+19         "mockery/mockery": "^1.4.2",
+20         "nunomaduro/collision": "^5.0",
+21         "phpunit/phpunit": "^9.3.3"
+22     },
+23     "config": {
+24         "optimize-autoloader": true,
+25         "preferred-install": "dist",
+26         "sort-packages": true
+27     },
+28     "extra": {
+29         "laravel": {
+30             "dont-discover": []
+31         }
+32     },
+33     "autoload": {
+34         "psr-4": {
+35             "App\\": "app/",
+36             "Database\\Factories\\": "database/factories/",
+37             "Database\\Seeders\\": "database/seeders/"
+38         }
+39     },
+40     "autoload-dev": {
+41         "psr-4": {
+42             "App\\Tests\\": "tests/"
+43         }
+44     },
+45     "minimum-stability": "dev",
+46     "prefer-stable": true,
+47     "scripts": {
+48         "post-autoload-dump": [
+49             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+50             "@php artisan package:discover --ansi"
+51         ],
+52         "post-root-package-install": [
+53             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+54         ],
+55         "post-create-project-cmd": [
+56             "@php artisan key:generate --ansi"
+57         ]
+58     }
+59 }
+
+File: app/Models/User.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 use Illuminate\Support\Facades\Hash;
+5 
+6 class User extends Model
+7 {
+8     protected $fillable = [
+9         'name',
+10         'email',
+11         'password',
+12     ];
+13 
+14     protected $hidden = [
+15         'password',
+16         'remember_token',
+17     ];
+18 
+19     public function profile()
+20     {
+21         return $this->hasOne(Profile::class);
+22     }
+23 
+24     public function teams()
+25     {
+26         return $this->belongsToMany(Team::class);
+27     }
+28 }
+
+File: app/Models/Team.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Team extends Model
+6 {
+7     protected $fillable = [
+8         'name',
+9     ];
+10 
+11     public function users()
+12     {
+13         return $this->belongsToMany(User::class);
+14     }
+15 }
+
+File: app/Models/Profile.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Profile extends Model
+6 {
+7     protected $fillable = [
+8         'user_id',
+9         'bio',
+10         'tags',
+11     ]
+12 
+13     public function user()
+14     {
+15         return $this->belongsTo(User::class);
+16     }
+17 }
+
+File: app/Models/Tag.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Tag extends Model
+6 {
+7     protected $fillable = [
+8         'name',
+9     ];
+10 
+11     public function profiles()
+12     {
+13         return $this->belongsToMany(Profile::class);
+14     }
+15 }
+
+File: app/Http/Controllers/UserController.php
+1 namespace App\Http\Controllers;
+2 
+3 use Illuminate\Http\Request;
+4 use App\Models\User;
+5 use App\Http\Requests\UserRequest;
+6 
+7 class UserController extends Controller
+8 {
+9     public function register(UserRequest $request)
+10     {
+11         $user = new User();
+12         $user->name = $request->input('name');
+13         $user->email = $request->input('email');
+14         $user->password = Hash::make($request->input('password'));
+15         $user->save();
+16 
+17         return redirect()->route('users.index');
+18     }
+19 
+20     public function login(Request $request)
+21     {
+22         $credentials = $request->only(['email', 'password']);
+23         if (!Auth::attempt($credentials)) {
+24             return redirect()->back()->withErrors(['email' => 'Invalid credentials']);
+25         }
+26 
+27         return redirect()->route('users.index');
+28     }
+29 
+30     public function index()
+31     {
+32         $users = User::all();
+33         return view('users.index', compact('users'));
+34     }
+35 
+36     public function show(User $user)
+37     {
+38         return view('users.show', compact('user'));
+39     }
+40 }
+
+File: app/Http/Controllers/TeamController.php
+1 namespace App\Http\Controllers;
+2 
+3 use Illuminate\Http\Request;
+4 use App\Models\Team;
+5 
+6 class TeamController extends Controller
+7 {
+8     public function index()
+9     {
+10         $teams = Team::all();
+11         return view('teams.index', compact('teams'));
+12     }
+13 
+14     public function create(Request $request)
+15     {
+16         $team = new Team();
+17         $team->name = $request->input('name');
+18         $team->save();
+19 
+20         return redirect()->route('teams.index');
+21     }
+22 }
+
+File: app/Http/Controllers/ProfileController.php
+1 namespace App\Http\Controllers;
+2 
+3 use Illuminate\Http\Request;
+4 use App\Models\Profile;
+5 
+6 class ProfileController extends Controller
+7 {
+8     public function edit(User $user)
+9     {
+10         return view('profiles.edit', compact('user'));
+11     }
+12 
+13     public function update(User $user, Request $request)
+14     {
+15         $profile = $user->profile;
+16         $profile->bio = $request->input('bio');
+17         $profile->tags = $request->input('tags');
+18         $profile->save();
+19 
+20         return redirect()->route('users.show', $user);
+21     }
+22 }
+
+File: app/Http/Requests/UserRequest.php
+1 namespace App\Http\Requests;
+2 
+3 use Illuminate\Foundation\Http\FormRequest;
+4 
+5 class UserRequest extends FormRequest
+6 {
+7     public function rules()
+8     {
+9         return [
+10             'name' => 'required|string|max:255',
+11             'email' => 'required|string|email|max:255|unique:users',
+12             'password' => 'required|string|min:8|confirmed',
+13             'password_confirmation' => 'required|string|min:8',
+14         ];
+15     }
+16 }
+
+File: routes/web.php
+1 Route::get('/', function () {
+2     return view('welcome');
+3 });
+4 
+5 Route::post('/register', 'UserController@register');
+6 Route::post('/login', 'UserController@login');
+7 Route::get('/users', 'UserController@index');
+8 Route::get('/users/{user}', 'UserController@show');
+9 
+10 Route::get('/teams', 'TeamController@index');
+11 Route::post('/teams', 'TeamController@create');
+12 
+13 Route::get('/profiles/{user}/edit', 'ProfileController@edit');
+14 Route::patch('/profiles/{user}', 'ProfileController@update');
+
+File: database/migrations/create_users_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateUsersTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('users', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->string('email')->unique();
+12             $table->string('password');
+13             $table->rememberToken();
+14             $table->timestamps();
+15         });
+16     }
+17 
+18     public function down()
+19     {
+20         Schema::dropIfExists('users');
+21     }
+22 }
+
+File: database/migrations/create_teams_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateTeamsTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('teams', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->timestamps();
+12         });
+13     }
+14 
+15     public function down()
+16     {
+17         Schema::dropIfExists('teams');
+18     }
+19 }
+
+File: database/migrations/create_profiles_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateProfilesTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('profiles', function (Blueprint $table) {
+9             $table->id();
+10             $table->unsignedBigInteger('user_id');
+11             $table->string('bio');
+12             $table->string('tags');
+13             $table->timestamps();
+14 
+15             $table->foreign('user_id')->references('id')->on('users');
+16         });
+17     }
+18 
+19     public function down()
+20     {
+21         Schema::dropIfExists('profiles');
+22     }
+23 }
+
+File: database/migrations/create_tags_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateTagsTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('tags', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->timestamps();
+12         });
+13     }
+14 
+15     public function down()
+16     {
+17         Schema::dropIfExists('tags');
+18     }
+19 }
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+composer install
+
+# Run migrations
+php artisan migrate
+
+# Run database seeds
+php artisan db:seed
+
+# Start the Laravel development server
+php artisan serve
+```
+Save this script to a file (e.g., `run.sh`), make it executable with `chmod +x run.sh`, and then run it with `./run.sh`.

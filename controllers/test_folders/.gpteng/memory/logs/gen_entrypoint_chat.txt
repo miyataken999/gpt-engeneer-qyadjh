@@ -1,0 +1,179 @@
+
+2024-06-12T19:25:05.481265
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api/
+2 app/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 team.py
+9 schemas/
+10 __init__.py
+11 user.py
+12 team.py
+13 routers/
+14 __init__.py
+15 user.py
+16 team.py
+17 database.py
+18 requirements.txt
+19 .gitignore
+
+File: api/app/__init__.py
+1 # empty file
+
+File: api/app/main.py
+1 from fastapi import FastAPI
+2 from routers import user_router, team_router
+3 
+4 app = FastAPI()
+5 
+6 app.include_router(user_router)
+7 app.include_router(team_router)
+
+File: api/app/models/__init__.py
+1 # empty file
+
+File: api/app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class User(Base):
+7     __tablename__ = 'users'
+8     id = Column(Integer, primary_key=True)
+9     username = Column(String, unique=True)
+10     password = Column(String)
+11     profile = Column(String)
+12     team_id = Column(Integer)
+
+File: api/app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class Team(Base):
+7     __tablename__ = 'teams'
+8     id = Column(Integer, primary_key=True)
+9     name = Column(String, unique=True)
+
+File: api/app/schemas/__init__.py
+1 # empty file
+
+File: api/app/schemas/user.py
+1 from pydantic import BaseModel
+2 
+3 class UserSchema(BaseModel):
+4     username: str
+5     password: str
+6     profile: str
+7     team_id: int
+
+File: api/app/schemas/team.py
+1 from pydantic import BaseModel
+2 
+3 class TeamSchema(BaseModel):
+4     name: str
+
+File: api/app/routers/__init__.py
+1 # empty file
+
+File: api/app/routers/user.py
+1 from fastapi import APIRouter, HTTPException
+2 from sqlalchemy.orm import Session
+3 from . import models, schemas
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/register")
+8 async def register_user(user: schemas.UserSchema, db: Session = Depends()):
+9     if db.query(models.User).filter_by(username=user.username).first():
+10         raise HTTPException(status_code=400, detail="Username already exists")
+11     new_user = models.User(username=user.username, password=user.password, profile=user.profile, team_id=user.team_id)
+12     db.add(new_user)
+13     db.commit()
+14     return {"message": "User created successfully"}
+15 
+16 @router.post("/login")
+17 async def login_user(username: str, password: str, db: Session = Depends()):
+18     user = db.query(models.User).filter_by(username=username, password=password).first()
+19     if not user:
+20         raise HTTPException(status_code=401, detail="Invalid username or password")
+21     return {"message": "Logged in successfully"}
+
+File: api/app/routers/team.py
+1 from fastapi import APIRouter
+2 from sqlalchemy.orm import Session
+3 from . import models, schemas
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/teams")
+8 async def create_team(team: schemas.TeamSchema, db: Session = Depends()):
+9     new_team = models.Team(name=team.name)
+10     db.add(new_team)
+11     db.commit()
+12     return {"message": "Team created successfully"}
+
+File: api/app/database.py
+1 from sqlalchemy import create_engine
+2 from sqlalchemy.orm import sessionmaker
+3 
+4 SQLALCHEMY_DATABASE_URL = "sqlite:///api.db"
+5 engine = create_engine(SQLALCHEMY_DATABASE_URL)
+6 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+7 
+8 def get_db():
+9     db = SessionLocal()
+10     try:
+11         yield db
+12     finally:
+13         db.close()
+
+File: api/requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: .gitignore
+1 api/db.sqlite3
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+uvicorn api.app.main:app --host 0.0.0.0 --port 8000
+```
+Note: This script assumes that you have Python and pip installed on your system. Also, it uses `uvicorn` to run the FastAPI application. If you don't have `uvicorn` installed, you can install it by running `pip install uvicorn`.
